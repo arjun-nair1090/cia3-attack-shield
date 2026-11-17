@@ -38,10 +38,10 @@ public class ApiController {
         return engine.traffic(seconds);
     }
 
-    /** Body {"ip": "..."}; with no ip, blocks the caller's own address (the demo's "block me" button). */
+    /** "Block me": adds only the caller's own address, so nobody can lock someone else out. */
     @PostMapping("/blocklist")
-    public Map<String, Object> block(@RequestBody(required = false) Map<String, String> body, HttpServletRequest req) {
-        String ip = body == null || body.get("ip") == null || body.get("ip").isBlank() ? req.getRemoteAddr() : body.get("ip").trim();
+    public Map<String, Object> blockMe(HttpServletRequest req) {
+        String ip = req.getRemoteAddr();
         return Map.of("ip", ip, "added", engine.addBadIp(ip));
     }
 

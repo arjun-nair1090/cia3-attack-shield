@@ -10,9 +10,12 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import java.io.IOException;
+import org.springframework.web.util.UrlPathHelper;
 
-/** Every real HTTP request to the demo shop passes through the shield before it reaches the shop. */
+import java.io.IOException;
+import java.util.Set;
+
+/** Every real HTTP request (the demo shop, scanner probes, anything) passes through the shield first. */
 @Component
 public class ShieldFilter extends OncePerRequestFilter {
 
@@ -24,9 +27,16 @@ public class ShieldFilter extends OncePerRequestFilter {
         this.hub = hub;
     }
 
+    private static final Set<String> DASHBOARD_FILES = Set.of("/", "/index.html", "/app.js", "/style.css", "/favicon.ico");
+
+    /**
+     * Inspect everything except the dashboard itself. The decision uses the decoded, normalized path the
+     * dispatcher routes on, not the raw URI, so "/%73hop/search" cannot slip past as "not /shop".
+     */
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !request.getRequestURI().startsWith("/shop");
+        String path = UrlPathHelper.defaultInstance.getPathWithinApplication(request);
+        return path.startsWith("/api/") || DASHBOARD_FILES.contains(path);
     }
 
     @Override
