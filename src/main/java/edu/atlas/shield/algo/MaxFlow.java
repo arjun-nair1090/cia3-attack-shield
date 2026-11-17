@@ -16,7 +16,8 @@ public final class MaxFlow {
 
     public record Edge(int from, int to, long capacity) {}
 
-    public record Result(long maxFlow, List<Edge> minCut, boolean[] sourceSide) {}
+    /** augmentingPaths: BFS rounds that pushed flow; Edmonds–Karp bounds it by O(V * E) whatever the capacities. */
+    public record Result(long maxFlow, List<Edge> minCut, boolean[] sourceSide, int augmentingPaths) {}
 
     private final int n;
     private final List<Integer>[] adj; // edge indexes leaving each node
@@ -50,6 +51,7 @@ public final class MaxFlow {
         if (s == t) throw new IllegalArgumentException("source and sink must differ");
         long[] residual = cap.stream().mapToLong(Long::longValue).toArray();
         long flow = 0;
+        int paths = 0;
         int[] parentEdge = new int[n];
         while (bfs(s, t, residual, parentEdge)) {
             long push = Long.MAX_VALUE;
@@ -61,13 +63,14 @@ public final class MaxFlow {
             // Each residual pair sums to its capacity, so only the running total can overflow.
             if (push > Long.MAX_VALUE - flow) throw new IllegalArgumentException("max flow exceeds " + Long.MAX_VALUE + "; use smaller capacities");
             flow += push;
+            paths++;
         }
         // After the last failed BFS, parentEdge marks exactly the nodes reachable from s in the residual graph.
         boolean[] sourceSide = new boolean[n];
         for (int v = 0; v < n; v++) sourceSide[v] = v == s || parentEdge[v] >= 0;
         List<Edge> cut = new ArrayList<>();
         for (Edge e : original) if (sourceSide[e.from()] && !sourceSide[e.to()] && e.capacity() > 0) cut.add(e);
-        return new Result(flow, cut, sourceSide);
+        return new Result(flow, cut, sourceSide, paths);
     }
 
     /** Shortest augmenting path by edge count — this choice is what makes it Edmonds–Karp. */
