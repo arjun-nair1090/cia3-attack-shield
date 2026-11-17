@@ -35,9 +35,12 @@ public class ShieldEngine {
     private static final Pattern IPV4 = Pattern.compile("((25[0-5]|2[0-4]\\d|1?\\d?\\d)\\.){3}(25[0-5]|2[0-4]\\d|1?\\d?\\d)");
     private static final Pattern IPV6 = Pattern.compile("[0-9a-fA-F:]{2,39}");
 
-    private final BloomFilter bloom;
-    private final Set<String> exactBadIps;
-    private final List<String> badIpList; // for the simulator to draw real attacker IPs from
+    public static final int RUNTIME_HEADROOM = 10_000; // room for IPs blocked at runtime before the FPR degrades
+
+    private BloomFilter bloom;
+    private double bloomTargetFpr = 0.01;
+    private Set<String> exactBadIps;
+    private List<String> badIpList; // for the simulator to draw real attacker IPs from
     private final SignatureTrie trie = new SignatureTrie();
     private final List<String[]> signatures = new ArrayList<>(); // {category, signature}
     private final TrafficSegmentTree allTraffic = new TrafficSegmentTree(WINDOW_SECONDS);
@@ -49,8 +52,7 @@ public class ShieldEngine {
     public ShieldEngine() {
         badIpList = readLines("data/bad-ips.txt");
         exactBadIps = new HashSet<>(badIpList);
-        bloom = new BloomFilter(exactBadIps.size() + 10_000, 0.01); // headroom for IPs blocked at runtime
-        exactBadIps.forEach(bloom::add);
+        bloom = buildBloom(exactBadIps, bloomTargetFpr);
         for (String line : readLines("data/signatures.txt")) {
             int bar = line.indexOf('|');
             if (bar <= 0 || bar == line.length() - 1) throw new IllegalStateException("bad signature line: " + line);
@@ -144,6 +146,67 @@ public class ShieldEngine {
         return true;
     }
 
+    private static BloomFilter buildBloom(Set<String> ips, double targetFpr) {
+        BloomFilter f = new BloomFilter(ips.size() + RUNTIME_HEADROOM, targetFpr);
+        ips.forEach(f::add);
+        return f;
+    }
+
+    public record ParsedBlocklist(List<String> ips, int duplicates) {}
+
+    /**
+     * One IP per line; blank lines and # comments are skipped. Any malformed line rejects the whole upload
+     * (reporting the first line numbers), so a typo can never silently shrink the blocklist.
+     */
+    public static ParsedBlocklist parseBlocklist(String text) {
+        if (text == null || text.isBlank()) throw new IllegalArgumentException("blocklist is empty");
+        Set<String> seen = new java.util.LinkedHashSet<>();
+        List<String> bad = new ArrayList<>();
+        int duplicates = 0, lineNo = 0, badCount = 0;
+        for (String line : text.split("\n", -1)) {
+            lineNo++;
+            String ip = line.strip();
+            if (ip.isEmpty() || ip.startsWith("#")) continue;
+            if (!isIp(ip)) {
+                if (++badCount <= 5) bad.add("line " + lineNo + " (\"" + (ip.length() > 40 ? ip.substring(0, 40) + "…" : ip) + "\")");
+            } else if (!seen.add(ip)) duplicates++;
+        }
+        if (badCount > 0)
+            throw new IllegalArgumentException(badCount + " line(s) are not IP addresses: " + String.join(", ", bad)
+                    + (badCount > 5 ? ", …" : ""));
+        if (seen.isEmpty()) throw new IllegalArgumentException("blocklist has no IP addresses, only blank lines or comments");
+        return new ParsedBlocklist(List.copyOf(seen), duplicates);
+    }
+
+    public record Rebuild(int blocklistSize, int duplicatesIgnored, int bloomBits, int bloomHashes, double targetFpr,
+                          double theoreticalFpr, double measuredFpr, int sampled) {}
+
+    /**
+     * Rebuild the Bloom filter for a new target false-positive rate, optionally over a new blocklist
+     * (null keeps the current one). Then measure the real false-positive rate on 100,000 private
+     * 10.x.x.x addresses that are not on the list, to set beside the theory (1 - e^(-kn/m))^k.
+     */
+    public synchronized Rebuild rebuildBlocklist(double targetFpr, ParsedBlocklist upload) {
+        if (!(targetFpr >= 0.0001 && targetFpr <= 0.5)) throw new IllegalArgumentException("falsePositiveRate must be in [0.0001, 0.5]");
+        if (upload != null) {
+            badIpList = new ArrayList<>(upload.ips());
+            exactBadIps = new HashSet<>(upload.ips());
+        }
+        bloom = buildBloom(exactBadIps, targetFpr);
+        bloomTargetFpr = targetFpr;
+
+        java.util.Random r = new java.util.Random(42); // fixed seed: the same rebuild measures the same number
+        int sampled = 0, fp = 0;
+        while (sampled < 100_000) {
+            String ip = "10." + r.nextInt(256) + "." + r.nextInt(256) + "." + r.nextInt(256);
+            if (exactBadIps.contains(ip)) continue; // only true negatives can be false positives
+            sampled++;
+            if (bloom.mightContain(ip)) fp++;
+        }
+        return new Rebuild(exactBadIps.size(), upload == null ? 0 : upload.duplicates(), bloom.bitCount(), bloom.hashCount(),
+                targetFpr, bloom.expectedFalsePositiveRate(), (double) fp / sampled, sampled);
+    }
+
     /** Ring buffer of one-second buckets: clear every bucket we skipped over before counting into the current one. */
     private void record(long second, Verdict verdict) {
         advanceTo(second);
@@ -199,12 +262,12 @@ public class ShieldEngine {
     public record Stats(long total, long allowed, long flagged, long blocked, long bloomHits, long bloomFalsePositives,
                         long signatureHits,
                         int blocklistSize, int bloomBits, int bloomHashes, double bloomExpectedFpr,
-                        int signatures, double avgInspectMicros) {}
+                        int signatures, double avgInspectMicros, double bloomTargetFpr) {}
 
     public synchronized Stats stats() {
         return new Stats(total, allowed, flagged, blocked, bloomHits, bloomFalsePositives, signatureHits,
                 exactBadIps.size(), bloom.bitCount(), bloom.hashCount(), bloom.expectedFalsePositiveRate(),
-                trie.size(), total == 0 ? 0 : totalNanos / 1000.0 / total);
+                trie.size(), total == 0 ? 0 : totalNanos / 1000.0 / total, bloomTargetFpr);
     }
 
     /** Snapshot of the Bloom filter's bit array for the dashboard's bit-field view. */

@@ -27,6 +27,7 @@
     <button id="openInspect"><kbd>I</kbd> Inspect text</button>
     <button id="openFlood"><kbd>F</kbd> Launch flood</button>
     <button id="openNet"><kbd>N</kbd> Network bottleneck</button>
+    <button id="openTune"><kbd>T</kbd> Tune Bloom filter</button>
     <button id="blockMe"><kbd>B</kbd> Block my IP</button>
     <button id="theme" aria-pressed="false"><kbd>D</kbd> Daylight</button>
   </nav>
@@ -96,6 +97,17 @@
   <label>Source IP, optional <input id="inspIp" type="text" class="wire" placeholder="e.g. 45.148.10.151" autocomplete="off" spellcheck="false"></label>
   <button id="inspGo" class="go">Inspect</button>
   <p class="note" id="inspMsg" role="status"></p>
+</dialog>
+
+<dialog id="tuneDlg" aria-labelledby="tuneTitle">
+  <form method="dialog" class="dlg-close"><button aria-label="Close">Close</button></form>
+  <h2 id="tuneTitle">Tune the Bloom filter</h2>
+  <p class="note">A lower false-positive target costs more bits and more hash probes. Java rebuilds the filter, then tests it on 100,000 addresses that are not on the list and reports how often it wrongly says “possibly listed”.</p>
+  <label>Target false-positive rate <input id="tuneFpr" type="range" min="0" max="6" step="1" value="2"> <output id="tuneFprOut">1 %</output></label>
+  <label>Blocklist file, optional <input id="tuneFile" type="file" accept=".txt,text/plain"></label>
+  <p class="note">One IP address per line; <code class="wire">#</code> starts a comment. Without a file the current list is kept. Restart the server to return to the built-in list.</p>
+  <button id="tuneGo" class="go">Rebuild filter</button>
+  <dl class="result" id="tuneResult"></dl>
 </dialog>
 
 <dialog id="floodDlg" aria-labelledby="floodTitle">
