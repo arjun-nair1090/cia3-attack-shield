@@ -4,60 +4,101 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Attack Shield</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='3' width='26' height='26' fill='none' stroke='%231E2630' stroke-width='3'/%3E%3Crect x='11' y='11' width='10' height='10' fill='%23E8650A'/%3E%3C/svg%3E">
+  <link rel="preload" href="fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <!-- ?v=2 evicts copies browsers cached before no-store was set; no further bumps needed -->
+  <link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
-<header>
-  <h1><span class="dot" id="live"></span> ATTACK SHIELD</h1>
-  <p class="hint">Attack it yourself: open <a id="shopLink" href="/shop/index.html" target="_blank"></a> on any device on this network.</p>
+
+<header class="bar">
+  <h1 class="mark">Attack Shield</h1>
+  <p class="guard">
+    <span class="live" id="live">Connecting</span>
+    Guarding <a id="shopUrl" class="wire" href="/shop/index.html" target="_blank" rel="noopener">/shop</a>
+  </p>
+  <nav class="dock" aria-label="Controls">
+    <button id="openFlood"><kbd>F</kbd> Launch flood</button>
+    <button id="openNet"><kbd>N</kbd> Network bottleneck</button>
+    <button id="blockMe"><kbd>B</kbd> Block my IP</button>
+  </nav>
+  <figure class="qr">
+    <canvas id="qr" aria-label="QR code that opens the shop"></canvas>
+    <figcaption>Scan to attack</figcaption>
+  </figure>
 </header>
 
-<section class="tiles">
-  <div class="tile"><b id="sTotal">0</b><span>requests inspected</span></div>
-  <div class="tile bad"><b id="sBlocked">0</b><span>blocked</span></div>
-  <div class="tile warn"><b id="sFlagged">0</b><span>flagged</span></div>
-  <div class="tile"><b id="sFp">0</b><span>Bloom false positives caught</span></div>
-  <div class="tile"><b id="sList">0</b><span>IPs on blocklist</span></div>
-  <div class="tile"><b id="sMicros">0</b><span>µs avg inspection</span></div>
-</section>
+<main class="stage">
 
-<section class="grid">
-  <div class="panel wide">
-    <h2>Traffic, last 60 s <small id="peak"></small></h2>
-    <canvas id="chart" height="180"></canvas>
-    <p class="legend"><i class="sw all"></i> all requests <i class="sw blk"></i> blocked <small>(window sums and the peak come from the Java segment tree)</small></p>
-  </div>
+  <section class="belt" aria-label="Requests moving through the scanner">
+    <div class="gate" style="--x: 22%"><b>Bloom filter</b><span id="gBloom">0 possibly listed</span></div>
+    <div class="gate" style="--x: 44%"><b>Exact check</b><span id="gExact">0 confirmed</span></div>
+    <div class="gate" style="--x: 66%"><b>Signature trie</b><span id="gTrie">0 matched</span></div>
+    <div class="gate verdict" style="--x: 86%"><b>Verdict</b><span id="gVerdict">0 stopped</span></div>
+    <div class="rail" aria-hidden="true"></div>
+    <div class="lane" id="lane"></div>
+    <div class="bin" id="bin"><b id="binCount">0</b><span>stopped</span></div>
+    <p class="belt-empty" id="beltEmpty">Waiting for traffic. Open the shop or scan the code.</p>
+  </section>
 
-  <div class="panel">
-    <h2>Launch a flood</h2>
-    <label>Requests <input id="simN" type="number" min="1" max="1000000" value="50000"></label>
-    <label>Attack share <input id="simRatio" type="range" min="0" max="100" value="30"> <output id="simRatioOut">30%</output></label>
-    <button id="simGo">Launch</button>
-    <dl id="simResult" class="result"></dl>
-    <hr>
-    <button id="blockMe" class="ghost">Add my IP to the blocklist</button>
-    <p id="blockMsg" class="hint"></p>
-  </div>
+  <section class="autopsy" aria-labelledby="autopsyTitle">
+    <h2 id="autopsyTitle" class="quiet">Latest stopped request</h2>
+    <div class="specimen" id="specimen">
+      <p class="sent"><span class="k">Sent</span><code class="wire" id="sent">Nothing stopped yet.</code></p>
+      <p class="read"><span class="k">Read</span><code class="wire" id="read"></code></p>
+    </div>
+    <ol class="trace" id="trace" aria-live="polite"></ol>
+  </section>
 
-  <div class="panel">
-    <h2>Network bottleneck <small>(min-cut)</small></h2>
-    <svg id="net" viewBox="0 0 400 220" role="img" aria-label="Network graph with bottleneck links in red"></svg>
-    <details>
-      <summary>Edit network (JSON)</summary>
-      <textarea id="netJson" rows="10" spellcheck="false"></textarea>
-    </details>
-    <button id="netGo">Find bottleneck</button>
-    <p id="netMsg" class="hint"></p>
-  </div>
+  <section class="field" aria-labelledby="fieldTitle">
+    <h2 id="fieldTitle" class="quiet">Bloom filter memory</h2>
+    <canvas id="bits" aria-describedby="fieldNote"></canvas>
+    <p class="note" id="fieldNote">Loading the filter…</p>
+  </section>
 
-  <div class="panel wide">
-    <h2>Live feed</h2>
-    <table>
-      <thead><tr><th>Time</th><th>Verdict</th><th>Source IP</th><th>Request</th><th>Why</th><th>µs</th></tr></thead>
-      <tbody id="feed"></tbody>
-    </table>
-  </div>
-</section>
-<script src="app.js"></script>
+  <section class="pulse" aria-labelledby="pulseTitle">
+    <h2 id="pulseTitle" class="quiet">Requests per second, last 60 s</h2>
+    <canvas id="chart"></canvas>
+    <p class="flood" id="flood" hidden></p>
+    <p class="note">Window totals and the peak come from the segment tree, O(log n) per query.</p>
+  </section>
+
+  <section class="numbers" aria-label="Totals">
+    <p><b id="nTotal">0</b><span>inspected</span></p>
+    <p class="stop"><b id="nBlocked">0</b><span>stopped</span></p>
+    <p class="flag"><b id="nFlagged">0</b><span>flagged for review</span></p>
+    <p><b id="nFp">0</b><span>Bloom false alarms caught by the exact check</span></p>
+    <p><b id="nMicros">0</b><span>µs per inspection</span></p>
+  </section>
+
+</main>
+
+<p class="toast" id="toast" role="status" hidden></p>
+
+<dialog id="floodDlg" aria-labelledby="floodTitle">
+  <form method="dialog" class="dlg-close"><button aria-label="Close">Close</button></form>
+  <h2 id="floodTitle">Launch a flood</h2>
+  <p class="note">Synthetic requests with known labels go through the same Java pipeline, so detection and false-alarm rates are measured, not guessed.</p>
+  <label>Requests <input id="simN" type="number" min="1" max="1000000" value="100000" inputmode="numeric"></label>
+  <label>Share that are attacks <input id="simRatio" type="range" min="0" max="100" value="30"> <output id="simRatioOut">30 %</output></label>
+  <button id="simGo" class="go">Launch flood</button>
+  <dl class="result" id="simResult"></dl>
+</dialog>
+
+<dialog id="netDlg" aria-labelledby="netTitle" class="wide">
+  <form method="dialog" class="dlg-close"><button aria-label="Close">Close</button></form>
+  <h2 id="netTitle">Where does this network choke?</h2>
+  <p class="note">Edmonds–Karp finds the maximum traffic the network can carry. The minimum cut, in orange, is the set of links an attacker would saturate first.</p>
+  <svg id="net" viewBox="0 0 800 300" role="img" aria-label="Network with bottleneck links in orange"></svg>
+  <p class="net-answer" id="netMsg"></p>
+  <details>
+    <summary>Edit the network</summary>
+    <textarea id="netJson" rows="12" spellcheck="false" class="wire"></textarea>
+    <button id="netGo" class="go">Find the bottleneck</button>
+  </details>
+</dialog>
+
+<script src="vendor/qrcode.min.js"></script>
+<script src="app.js?v=2"></script>
 </body>
 </html>

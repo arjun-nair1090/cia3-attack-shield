@@ -49,10 +49,13 @@ public class ShieldFilter extends OncePerRequestFilter {
             res.setStatus(HttpServletResponse.SC_FORBIDDEN);
             res.setContentType("text/html;charset=UTF-8");
             res.getWriter().write("""
-                    <!doctype html><meta name=viewport content="width=device-width">
-                    <body style="font:18px system-ui;background:#1a0606;color:#ffb4b4;display:grid;place-items:center;height:100vh;margin:0;text-align:center">
-                    <div><div style="font-size:64px">&#x1F6E1;</div><h1>Blocked by Attack Shield</h1>
-                    <p>This request matched a known attack. It is now on the live dashboard.</p></div>""");
+                    <!doctype html><meta name=viewport content="width=device-width, initial-scale=1"><title>Stopped</title>
+                    <body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#F2F5F7;color:#1E2630;font:18px/1.5 system-ui,sans-serif;padding:24px;box-sizing:border-box">
+                    <main style="max-width:30rem">
+                    <p style="display:inline-block;margin:0 0 18px;padding:6px 14px;border:4px solid #E8650A;color:#E8650A;font-weight:900;font-size:40px;letter-spacing:.02em;transform:rotate(-4deg)">Stopped</p>
+                    <h1 style="margin:0 0 10px;font-size:26px">Attack Shield caught this request.</h1>
+                    <p style="margin:0;color:#6B7A89">It matched a known attack pattern or came from a blocked address. Look at the projector: it is being taken apart there right now.</p>
+                    </main>""");
             return;
         }
         chain.doFilter(req, res);

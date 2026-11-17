@@ -18,6 +18,11 @@ public class EventHub {
         e.onCompletion(() -> emitters.remove(e));
         e.onTimeout(() -> emitters.remove(e));
         e.onError(x -> emitters.remove(e));
+        try {
+            e.send(SseEmitter.event().comment("connected")); // flush headers now so the browser reports "Live" before any traffic
+        } catch (Exception gone) {
+            emitters.remove(e);
+        }
         return e;
     }
 
