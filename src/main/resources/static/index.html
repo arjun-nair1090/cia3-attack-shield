@@ -24,6 +24,7 @@
     Guarding <a id="shopUrl" class="wire" href="/shop/index.html" target="_blank" rel="noopener">/shop</a>
   </p>
   <nav class="dock" aria-label="Controls">
+    <button id="openInspect"><kbd>I</kbd> Inspect text</button>
     <button id="openFlood"><kbd>F</kbd> Launch flood</button>
     <button id="openNet"><kbd>N</kbd> Network bottleneck</button>
     <button id="blockMe"><kbd>B</kbd> Block my IP</button>
@@ -86,6 +87,16 @@
 </main>
 
 <p class="toast" id="toast" role="status" hidden></p>
+
+<dialog id="inspectDlg" aria-labelledby="inspectTitle">
+  <form method="dialog" class="dlg-close"><button aria-label="Close">Close</button></form>
+  <h2 id="inspectTitle">Inspect any text</h2>
+  <p class="note">Paste a URL, header or payload. The Java pipeline runs on it exactly as on live traffic, but nothing is counted or sent to the shop.</p>
+  <label>Text <textarea id="inspText" rows="4" spellcheck="false" class="wire" maxlength="8192">/shop/search?q=%2527%2520UNION%2520SELECT%2520password%2520FROM%2520users--</textarea></label>
+  <label>Source IP, optional <input id="inspIp" type="text" class="wire" placeholder="e.g. 45.148.10.151" autocomplete="off" spellcheck="false"></label>
+  <button id="inspGo" class="go">Inspect</button>
+  <p class="note" id="inspMsg" role="status"></p>
+</dialog>
 
 <dialog id="floodDlg" aria-labelledby="floodTitle">
   <form method="dialog" class="dlg-close"><button aria-label="Close">Close</button></form>

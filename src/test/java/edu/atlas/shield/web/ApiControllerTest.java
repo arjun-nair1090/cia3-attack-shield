@@ -80,6 +80,34 @@ class ApiControllerTest {
     }
 
     @Test
+    void inspectExplainsAnyTextWithoutCountingIt() throws Exception {
+        String before = mvc.perform(get("/api/stats")).andReturn().getResponse().getContentAsString();
+        mvc.perform(json("/api/inspect", """
+                        {"text":"/shop/search?q=%2527%2520UNION%2520SELECT%2520password","ip":"45.148.10.151"}"""))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.verdict").value("BLOCK"))
+                .andExpect(jsonPath("$.normalized").value("/shop/search?q=' union select password"))
+                .andExpect(jsonPath("$.matches[0].signature").value("union select"))
+                .andExpect(jsonPath("$.matches[0].position").value(17))
+                .andExpect(jsonPath("$.confirmedBadIp").value(true))
+                .andExpect(jsonPath("$.bloomProbes", hasSize(greaterThan(0))));
+        mvc.perform(json("/api/inspect", """
+                        {"text":"/shop/search?q=o%27reilly+java+book"}"""))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.verdict").value("ALLOW"))
+                .andExpect(jsonPath("$.matches", hasSize(0)));
+        String after = mvc.perform(get("/api/stats")).andReturn().getResponse().getContentAsString();
+        org.junit.jupiter.api.Assertions.assertEquals(before, after, "inspect must not touch the live counters");
+
+        mvc.perform(json("/api/inspect", "{\"text\":\"\"}")).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error", containsString("required")));
+        mvc.perform(json("/api/inspect", "{\"text\":\"x\",\"ip\":\"999.1.1.1\"}")).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error", containsString("not an IP")));
+        mvc.perform(json("/api/inspect", "{\"text\":\"" + "a".repeat(8_193) + "\"}")).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error", containsString("too long")));
+    }
+
+    @Test
     void simulateMeasuresDetectionAndValidatesParameters() throws Exception {
         mvc.perform(json("/api/simulate", """
                         {"requests":500,"attackRatio":0.5,"seed":7}"""))

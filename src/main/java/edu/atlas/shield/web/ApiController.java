@@ -1,6 +1,7 @@
 package edu.atlas.shield.web;
 
 import edu.atlas.shield.algo.MaxFlow;
+import edu.atlas.shield.core.Inspection;
 import edu.atlas.shield.core.ShieldEngine;
 import edu.atlas.shield.core.TrafficSimulator;
 import jakarta.servlet.http.HttpServletRequest;
@@ -73,6 +74,21 @@ public class ApiController {
     public Map<String, Object> blockMe(HttpServletRequest req) {
         String ip = req.getRemoteAddr();
         return Map.of("ip", ip, "added", engine.addBadIp(ip));
+    }
+
+    public record InspectRequest(String text, String ip) {}
+
+    /**
+     * "What would the shield do with this?" Runs the real pipeline on any pasted URL, header or payload,
+     * without counting it into the live stats. ip is optional; given, it goes through the Bloom + exact check.
+     */
+    @PostMapping("/inspect")
+    public Inspection inspect(@RequestBody InspectRequest body) {
+        if (body.text() == null || body.text().isEmpty()) throw new IllegalArgumentException("text is required");
+        if (body.text().length() > 8_192) throw new IllegalArgumentException("text is too long (max 8192 characters, the size of a request line)");
+        String ip = body.ip() == null || body.ip().isBlank() ? null : body.ip().strip();
+        if (ip != null && !ShieldEngine.isIp(ip)) throw new IllegalArgumentException("not an IP address: " + ip);
+        return engine.analyze(ip, body.text());
     }
 
     public record SimulateRequest(int requests, double attackRatio, Long seed) {}
