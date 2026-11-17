@@ -1,0 +1,51 @@
+# category|signature   (matched against the lower-cased, URL-decoded path + query)
+# Sources: OWASP Top 10 / OWASP CRS attack families, written by hand for this project.
+SQLI|' or 1=1
+SQLI|" or 1=1
+SQLI|' or '1'='1
+SQLI|or 1=1--
+SQLI|union select
+SQLI|union all select
+SQLI|; drop table
+SQLI|information_schema
+SQLI|sleep(
+SQLI|benchmark(
+SQLI|waitfor delay
+SQLI|' --
+SQLI|xp_cmdshell
+XSS|<script
+XSS|</script>
+XSS|javascript:
+XSS|onerror=
+XSS|onload=
+XSS|<iframe
+XSS|<svg
+XSS|document.cookie
+XSS|alert(
+TRAVERSAL|../
+TRAVERSAL|..\
+TRAVERSAL|/etc/passwd
+TRAVERSAL|/etc/shadow
+TRAVERSAL|c:\windows
+TRAVERSAL|boot.ini
+CMDI|; cat
+CMDI|| cat
+CMDI|&& whoami
+CMDI|; ls
+CMDI|$(
+CMDI|`id`
+CMDI|/bin/sh
+CMDI|/bin/bash
+CMDI|nc -e
+CMDI|wget http
+CMDI|curl http
+LOG4SHELL|${jndi:
+LOG4SHELL|${${
+SSRF|169.254.169.254
+SSRF|file://
+SSRF|gopher://
+SCANNER|/wp-admin
+SCANNER|/wp-login.php
+SCANNER|/.env
+SCANNER|/.git/
+SCANNER|/phpmyadmin

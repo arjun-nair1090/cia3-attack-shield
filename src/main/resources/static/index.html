@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Attack Shield</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1><span class="dot" id="live"></span> ATTACK SHIELD</h1>
+  <p class="hint">Attack it yourself: open <a id="shopLink" href="/shop/index.html" target="_blank"></a> on any device on this network.</p>
+</header>
+
+<section class="tiles">
+  <div class="tile"><b id="sTotal">0</b><span>requests inspected</span></div>
+  <div class="tile bad"><b id="sBlocked">0</b><span>blocked</span></div>
+  <div class="tile warn"><b id="sFlagged">0</b><span>flagged</span></div>
+  <div class="tile"><b id="sFp">0</b><span>Bloom false positives caught</span></div>
+  <div class="tile"><b id="sList">0</b><span>IPs on blocklist</span></div>
+  <div class="tile"><b id="sMicros">0</b><span>µs avg inspection</span></div>
+</section>
+
+<section class="grid">
+  <div class="panel wide">
+    <h2>Traffic, last 60 s <small id="peak"></small></h2>
+    <canvas id="chart" height="180"></canvas>
+    <p class="legend"><i class="sw all"></i> all requests <i class="sw blk"></i> blocked <small>(window sums and the peak come from the Java segment tree)</small></p>
+  </div>
+
+  <div class="panel">
+    <h2>Launch a flood</h2>
+    <label>Requests <input id="simN" type="number" min="1" max="1000000" value="50000"></label>
+    <label>Attack share <input id="simRatio" type="range" min="0" max="100" value="30"> <output id="simRatioOut">30%</output></label>
+    <button id="simGo">Launch</button>
+    <dl id="simResult" class="result"></dl>
+    <hr>
+    <button id="blockMe" class="ghost">Add my IP to the blocklist</button>
+    <p id="blockMsg" class="hint"></p>
+  </div>
+
+  <div class="panel">
+    <h2>Network bottleneck <small>(min-cut)</small></h2>
+    <svg id="net" viewBox="0 0 400 220" role="img" aria-label="Network graph with bottleneck links in red"></svg>
+    <details>
+      <summary>Edit network (JSON)</summary>
+      <textarea id="netJson" rows="10" spellcheck="false"></textarea>
+    </details>
+    <button id="netGo">Find bottleneck</button>
+    <p id="netMsg" class="hint"></p>
+  </div>
+
+  <div class="panel wide">
+    <h2>Live feed</h2>
+    <table>
+      <thead><tr><th>Time</th><th>Verdict</th><th>Source IP</th><th>Request</th><th>Why</th><th>µs</th></tr></thead>
+      <tbody id="feed"></tbody>
+    </table>
+  </div>
+</section>
+<script src="app.js"></script>
+</body>
+</html>
