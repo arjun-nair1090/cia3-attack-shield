@@ -1,0 +1,63 @@
+:root {
+  --bg: #07090d; --panel: #0f141c; --line: #1e2733; --text: #d7e0ea; --muted: #7d8a99;
+  --ok: #3ddc97; --warn: #ffb547; --bad: #ff4d5e; --accent: #4cc9f0;
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+* { box-sizing: border-box; }
+body { margin: 0; padding: 16px; background: var(--bg); color: var(--text); }
+a { color: var(--accent); }
+header h1 { margin: 0; font-size: 22px; letter-spacing: .2em; display: flex; align-items: center; gap: 10px; }
+.hint { color: var(--muted); font-size: 13px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; background: var(--muted); display: inline-block; }
+.dot.on { background: var(--ok); box-shadow: 0 0 12px var(--ok); animation: pulse 1.6s infinite; }
+@keyframes pulse { 50% { opacity: .4; } }
+
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 16px 0; }
+.tile { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; }
+.tile b { display: block; font-size: 26px; font-variant-numeric: tabular-nums; }
+.tile span { color: var(--muted); font-size: 12px; }
+.tile.bad b { color: var(--bad); } .tile.warn b { color: var(--warn); }
+.tile.flash { animation: flash .5s; }
+@keyframes flash { from { border-color: var(--bad); box-shadow: 0 0 18px var(--bad); } }
+
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; min-width: 0; }
+.panel.wide { grid-column: 1 / -1; }
+h2 { margin: 0 0 10px; font-size: 14px; letter-spacing: .1em; text-transform: uppercase; }
+h2 small { color: var(--warn); text-transform: none; letter-spacing: 0; }
+canvas { width: 100%; display: block; }
+.legend { font-size: 12px; color: var(--muted); }
+.sw { display: inline-block; width: 10px; height: 10px; margin: 0 4px 0 10px; }
+.sw.all { background: var(--accent); } .sw.blk { background: var(--bad); }
+
+label { display: block; margin: 8px 0; font-size: 13px; color: var(--muted); }
+input[type=number], textarea { width: 100%; background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 6px; font: inherit; }
+input[type=range] { width: 70%; vertical-align: middle; }
+button { background: var(--bad); color: #fff; border: 0; border-radius: 6px; padding: 9px 16px; font: inherit; font-weight: bold; cursor: pointer; margin-top: 6px; }
+button.ghost { background: transparent; border: 1px solid var(--line); color: var(--text); }
+button:disabled { opacity: .5; cursor: wait; }
+hr { border: 0; border-top: 1px solid var(--line); margin: 14px 0; }
+.result { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 13px; margin: 10px 0 0; }
+.result dt { color: var(--muted); } .result dd { margin: 0; }
+
+svg { width: 100%; height: auto; background: var(--bg); border-radius: 6px; }
+svg text { fill: var(--text); font: 10px ui-monospace, monospace; }
+svg line { stroke: #3a4757; stroke-width: 2; }
+svg line.cut { stroke: var(--bad); stroke-width: 4; }
+svg circle { fill: var(--panel); stroke: var(--accent); stroke-width: 2; }
+svg circle.src { stroke: var(--ok); }
+
+table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
+th { text-align: left; color: var(--muted); font-weight: normal; border-bottom: 1px solid var(--line); padding: 4px; }
+td { padding: 4px; border-bottom: 1px solid #121922; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+th:nth-child(1) { width: 70px; } th:nth-child(2) { width: 64px; } th:nth-child(3) { width: 120px; } th:nth-child(6) { width: 50px; }
+tr.BLOCK td:nth-child(2) { color: var(--bad); font-weight: bold; }
+tr.FLAG td:nth-child(2) { color: var(--warn); }
+tr.ALLOW td:nth-child(2) { color: var(--ok); }
+tr.new { animation: rowin .8s; }
+@keyframes rowin { from { background: rgba(255, 77, 94, .25); } }
+
+@media (max-width: 760px) {
+  .grid { grid-template-columns: 1fr; }
+  th:nth-child(5), td:nth-child(5), th:nth-child(6), td:nth-child(6) { display: none; }
+}
