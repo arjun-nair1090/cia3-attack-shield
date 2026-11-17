@@ -98,8 +98,14 @@ public class ShieldEngine {
      *                       in {SQLI, XSS, TRAVERSAL, CMDI, LOG4SHELL, SSRF, SCANNER}
      */
     static Verdict decide(boolean confirmedBadIp, List<SignatureTrie.Match> matches) {
-        // TODO(you): write the policy, 5-10 lines. See the request in the chat.
-        throw new UnsupportedOperationException("decide() not written yet");
+        boolean exploit = false, probe = false;
+        for (SignatureTrie.Match m : matches) {
+            if (m.category().equals("SCANNER")) probe = true;
+            else exploit = true;
+        }
+        if (exploit || confirmedBadIp) return Verdict.BLOCK; // one exploit pattern, or an operator-listed IP, is enough
+        if (probe) return Verdict.FLAG;                      // recon like /wp-admin: watch it, don't lock anyone out
+        return Verdict.ALLOW;
     }
 
     /** URL-decode up to twice (unmasks %2527 -> %27 -> '), then lower-case. Malformed % escapes are kept as-is. */
