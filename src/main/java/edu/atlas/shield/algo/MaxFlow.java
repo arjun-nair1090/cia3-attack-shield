@@ -58,6 +58,8 @@ public final class MaxFlow {
                 residual[parentEdge[v]] -= push;
                 residual[parentEdge[v] ^ 1] += push;
             }
+            // Each residual pair sums to its capacity, so only the running total can overflow.
+            if (push > Long.MAX_VALUE - flow) throw new IllegalArgumentException("max flow exceeds " + Long.MAX_VALUE + "; use smaller capacities");
             flow += push;
         }
         // After the last failed BFS, parentEdge marks exactly the nodes reachable from s in the residual graph.

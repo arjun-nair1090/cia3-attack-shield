@@ -85,4 +85,13 @@ class MaxFlowTest {
         assertThrows(IllegalArgumentException.class, () -> g.addEdge(0, 3, 1));
         assertThrows(IllegalArgumentException.class, () -> g.solve(1, 1));
     }
+
+    @Test
+    void totalFlowBeyondLongRangeIsRejectedNotWrapped() {
+        MaxFlow g = new MaxFlow(2);
+        g.addEdge(0, 1, Long.MAX_VALUE);
+        assertEquals(Long.MAX_VALUE, g.solve(0, 1).maxFlow()); // exactly at the limit still works
+        g.addEdge(0, 1, 1);
+        assertThrows(IllegalArgumentException.class, () -> g.solve(0, 1)); // used to return Long.MIN_VALUE
+    }
 }
