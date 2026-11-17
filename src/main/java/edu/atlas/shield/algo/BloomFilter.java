@@ -50,6 +50,18 @@ public final class BloomFilter {
         return true;
     }
 
+    /** The k bit positions an item maps to, in probe order. Used to show a lookup on the dashboard. */
+    public int[] probes(String item) {
+        long h = hash64(Objects.requireNonNull(item, "item"));
+        int h1 = (int) h, h2 = (int) (h >>> 32) | 1;
+        int[] out = new int[k];
+        for (int i = 0; i < k; i++) out[i] = Math.floorMod(h1 + i * h2, m);
+        return out;
+    }
+
+    /** Copy of the bit array; bit i lives in word i / 64 at position i % 64. */
+    public long[] words() { return bits.clone(); }
+
     /** Theoretical false-positive rate for the current fill: (1 - e^(-kn/m))^k. */
     public double expectedFalsePositiveRate() {
         return Math.pow(1 - Math.exp(-(double) k * inserted / m), k);

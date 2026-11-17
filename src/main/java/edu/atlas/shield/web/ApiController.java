@@ -8,7 +8,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +39,28 @@ public class ApiController {
 
     @GetMapping("/stats")
     public ShieldEngine.Stats stats() { return engine.stats(); }
+
+    /** Raw Bloom filter bits as little-endian 64-bit words (about 170 KB), for the bit-field view. */
+    @GetMapping(value = "/bloom/bits", produces = "application/octet-stream")
+    public byte[] bloomBits() {
+        long[] words = engine.bloomWords();
+        ByteBuffer buf = ByteBuffer.allocate(words.length * Long.BYTES).order(ByteOrder.LITTLE_ENDIAN);
+        buf.asLongBuffer().put(words);
+        return buf.array();
+    }
+
+    /** Shop URLs on every active IPv4 LAN interface, so the dashboard can show a scan-to-attack QR code. */
+    @GetMapping("/info")
+    public Map<String, Object> info(HttpServletRequest req) throws SocketException {
+        List<String> urls = new ArrayList<>();
+        for (NetworkInterface nic : Collections.list(NetworkInterface.getNetworkInterfaces())) {
+            if (!nic.isUp() || nic.isLoopback() || nic.isVirtual()) continue;
+            for (InetAddress a : Collections.list(nic.getInetAddresses()))
+                if (a instanceof Inet4Address && a.isSiteLocalAddress())
+                    urls.add("http://" + a.getHostAddress() + ":" + req.getLocalPort() + "/shop/index.html");
+        }
+        return Map.of("shopUrls", urls);
+    }
 
     @GetMapping("/traffic")
     public ShieldEngine.TrafficWindow traffic(@RequestParam(defaultValue = "60") int seconds) {

@@ -45,6 +45,19 @@ class BloomFilterTest {
     }
 
     @Test
+    void probesAreExactlyTheBitsAnAddSets() {
+        BloomFilter f = new BloomFilter(1_000, 0.01);
+        f.add("45.148.10.151");
+        long[] w = f.words();
+        int[] p = f.probes("45.148.10.151");
+        assertEquals(f.hashCount(), p.length);
+        int set = 0;
+        for (long word : w) set += Long.bitCount(word);
+        for (int i : p) assertTrue((w[i >>> 6] & (1L << i)) != 0, "probe " + i + " must be set");
+        assertTrue(set <= p.length); // nothing else was set
+    }
+
+    @Test
     void rejectsInvalidInput() {
         assertThrows(IllegalArgumentException.class, () -> new BloomFilter(0, 0.01));
         assertThrows(IllegalArgumentException.class, () -> new BloomFilter(10, 0));

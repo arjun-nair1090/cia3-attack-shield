@@ -44,7 +44,7 @@ public class ShieldEngine {
     private final TrafficSegmentTree blockedTraffic = new TrafficSegmentTree(WINDOW_SECONDS);
     private long lastSecond = -1;
 
-    private long total, allowed, flagged, blocked, bloomHits, bloomFalsePositives, totalNanos;
+    private long total, allowed, flagged, blocked, bloomHits, bloomFalsePositives, signatureHits, totalNanos;
 
     public ShieldEngine() {
         badIpList = readLines("data/bad-ips.txt");
@@ -82,12 +82,14 @@ public class ShieldEngine {
         totalNanos += nanos;
         if (bloomHit) bloomHits++;
         if (bloomHit && !confirmed) bloomFalsePositives++;
+        if (!matches.isEmpty()) signatureHits++;
         switch (verdict) {
             case ALLOW -> allowed++;
             case FLAG -> flagged++;
             case BLOCK -> blocked++;
         }
-        return new Inspection(now, ip, rawRequest, verdict, bloomHit, confirmed, matches, reasons, nanos);
+        int[] probes = ip == null ? new int[0] : bloom.probes(ip); // for the dashboard; outside the timed section
+        return new Inspection(now, ip, rawRequest, text, verdict, bloomHit, confirmed, probes, matches, reasons, nanos);
     }
 
     /**
@@ -185,14 +187,18 @@ public class ShieldEngine {
     }
 
     public record Stats(long total, long allowed, long flagged, long blocked, long bloomHits, long bloomFalsePositives,
+                        long signatureHits,
                         int blocklistSize, int bloomBits, int bloomHashes, double bloomExpectedFpr,
                         int signatures, double avgInspectMicros) {}
 
     public synchronized Stats stats() {
-        return new Stats(total, allowed, flagged, blocked, bloomHits, bloomFalsePositives,
+        return new Stats(total, allowed, flagged, blocked, bloomHits, bloomFalsePositives, signatureHits,
                 exactBadIps.size(), bloom.bitCount(), bloom.hashCount(), bloom.expectedFalsePositiveRate(),
                 trie.size(), total == 0 ? 0 : totalNanos / 1000.0 / total);
     }
+
+    /** Snapshot of the Bloom filter's bit array for the dashboard's bit-field view. */
+    public synchronized long[] bloomWords() { return bloom.words(); }
 
     synchronized List<String> badIps() { return List.copyOf(badIpList); }
 
