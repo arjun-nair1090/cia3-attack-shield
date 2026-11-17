@@ -91,6 +91,21 @@ public class ApiController {
         return engine.analyze(ip, body.text());
     }
 
+    public record RebuildRequest(Double falsePositiveRate, String blocklist) {}
+
+    /**
+     * Re-size the Bloom filter for a new target false-positive rate and, if a blocklist file's text is given,
+     * replace the blocklist with it. Answers with theory beside the measured false-positive rate.
+     */
+    @PostMapping("/bloom/rebuild")
+    public ShieldEngine.Rebuild rebuild(@RequestBody RebuildRequest body) {
+        if (body.falsePositiveRate() == null) throw new IllegalArgumentException("falsePositiveRate is required");
+        if (body.blocklist() != null && body.blocklist().length() > 10_000_000)
+            throw new IllegalArgumentException("blocklist file is too large (max 10 MB)");
+        ShieldEngine.ParsedBlocklist upload = body.blocklist() == null ? null : ShieldEngine.parseBlocklist(body.blocklist());
+        return engine.rebuildBlocklist(body.falsePositiveRate(), upload);
+    }
+
     public record SimulateRequest(int requests, double attackRatio, Long seed) {}
 
     @PostMapping("/simulate")

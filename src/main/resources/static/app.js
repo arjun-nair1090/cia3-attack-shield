@@ -375,6 +375,42 @@ $('inspGo').onclick = async () => {
   }
 };
 
+// ---------- tune the Bloom filter (target FPR, optional uploaded blocklist) ----------
+const FPR_STEPS = [0.001, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2];
+const pctOf = x => (x * 100).toFixed(x < 0.01 ? 2 : 1).replace(/\.0$/, '') + ' %';
+$('tuneFpr').oninput = () => $('tuneFprOut').textContent = pctOf(FPR_STEPS[$('tuneFpr').value]);
+function openTune() { $('tuneDlg').showModal(); }
+$('openTune').onclick = openTune;
+$('tuneGo').onclick = async () => {
+  const btn = $('tuneGo'), file = $('tuneFile').files[0];
+  btn.disabled = true;
+  btn.textContent = 'Rebuilding…';
+  try {
+    const body = { falsePositiveRate: FPR_STEPS[$('tuneFpr').value] };
+    if (file) {
+      if (file.size > 10e6) throw new Error('That file is over 10 MB.');
+      body.blocklist = await file.text();
+    }
+    const r = await api('bloom/rebuild', body);
+    const exact = x => (x * 100).toFixed(3) + ' %';
+    const rows = [
+      ['Measured false alarms', exact(r.measuredFpr), true],
+      ['Theory, (1 − e^(−kn/m))^k', exact(r.theoreticalFpr)],
+      ['Design target', pctOf(r.targetFpr)],
+      ['Filter size', `${fmt(r.bloomBits)} bits (${fmt(Math.round(r.bloomBits / 8 / 1024))} KB), k = ${r.bloomHashes}`],
+      ['Blocked IPs', fmt(r.blocklistSize) + (r.duplicatesIgnored ? `, ${fmt(r.duplicatesIgnored)} duplicates ignored` : '')],
+      ['Tested on', `${fmt(r.sampled)} addresses not on the list`],
+    ];
+    $('tuneResult').replaceChildren(...rows.flatMap(([k, v, big]) => [el('dt', {}, k), el('dd', { class: big ? 'big' : '' }, v)]));
+    loadBits();
+  } catch (e) {
+    $('tuneResult').replaceChildren(el('dt', {}, 'Not rebuilt'), el('dd', {}, e.message));
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Rebuild filter';
+  }
+};
+
 // ---------- block my IP ----------
 async function blockMe() {
   try {
@@ -462,6 +498,7 @@ addEventListener('keydown', e => {
   if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
   const key = e.key.toLowerCase();
   if (key === 'i') { e.preventDefault(); openInspect(); }
+  if (key === 't') { e.preventDefault(); openTune(); }
   if (key === 'f') { e.preventDefault(); $('floodDlg').showModal(); }
   if (key === 'n') { e.preventDefault(); $('netDlg').showModal(); solveNet(); }
   if (key === 'b') { e.preventDefault(); blockMe(); }

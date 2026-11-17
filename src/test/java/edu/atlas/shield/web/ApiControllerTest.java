@@ -108,6 +108,26 @@ class ApiControllerTest {
     }
 
     @Test
+    void bloomRebuildValidatesUploadsAndReportsMeasuredRate() throws Exception {
+        // Rejected uploads must leave the shared engine untouched, so the other tests here are unaffected.
+        mvc.perform(json("/api/bloom/rebuild", """
+                        {"falsePositiveRate":0.01,"blocklist":"1.2.3.4\\nnot-an-ip\\n"}"""))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error", containsString("line 2")));
+        mvc.perform(json("/api/bloom/rebuild", """
+                        {"falsePositiveRate":0.01,"blocklist":"\\n# nothing\\n"}"""))
+                .andExpect(status().isBadRequest());
+        mvc.perform(json("/api/bloom/rebuild", "{}")).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error", containsString("required")));
+        mvc.perform(json("/api/bloom/rebuild", "{\"falsePositiveRate\":0.7}")).andExpect(status().isBadRequest());
+        // Same list, same 1 % target as at startup: a no-op rebuild that still reports its measurement.
+        mvc.perform(json("/api/bloom/rebuild", "{\"falsePositiveRate\":0.01}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sampled").value(100_000))
+                .andExpect(jsonPath("$.measuredFpr", lessThan(0.02)));
+    }
+
+    @Test
     void simulateMeasuresDetectionAndValidatesParameters() throws Exception {
         mvc.perform(json("/api/simulate", """
                         {"requests":500,"attackRatio":0.5,"seed":7}"""))

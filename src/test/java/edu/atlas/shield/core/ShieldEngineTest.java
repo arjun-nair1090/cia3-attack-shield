@@ -51,6 +51,37 @@ class ShieldEngineTest {
     }
 
     @Test
+    void blocklistUploadIsParsedStrictly() {
+        ShieldEngine.ParsedBlocklist p = ShieldEngine.parseBlocklist("# my list\r\n203.0.113.7\r\n\r\n203.0.113.7\n2001:db8::1\n");
+        assertEquals(List.of("203.0.113.7", "2001:db8::1"), p.ips());
+        assertEquals(1, p.duplicates());
+
+        IllegalArgumentException bad = assertThrows(IllegalArgumentException.class,
+                () -> ShieldEngine.parseBlocklist("1.2.3.4\n999.1.1.1\nhello\n"));
+        assertTrue(bad.getMessage().contains("line 2") && bad.getMessage().contains("line 3"), bad.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> ShieldEngine.parseBlocklist(""));
+        assertThrows(IllegalArgumentException.class, () -> ShieldEngine.parseBlocklist("# only a comment\n\n"));
+    }
+
+    @Test
+    void rebuildMeasuresFalsePositivesNearTheoryAndSwapsTheList() {
+        ShieldEngine e = new ShieldEngine();
+        ShieldEngine.Rebuild r = e.rebuildBlocklist(0.05, null); // same 135k list, looser filter
+        assertEquals(e.stats().blocklistSize(), r.blocklistSize());
+        assertEquals(100_000, r.sampled());
+        assertTrue(r.theoreticalFpr() < 0.05);                                      // below target: not yet at design capacity
+        assertEquals(r.theoreticalFpr(), r.measuredFpr(), 0.01, "measured FPR should track theory");
+        assertTrue(r.bloomBits() < new ShieldEngine().stats().bloomBits());          // looser target => smaller filter
+
+        r = e.rebuildBlocklist(0.01, ShieldEngine.parseBlocklist("203.0.113.7\n203.0.113.8\n"));
+        assertEquals(2, r.blocklistSize());
+        assertEquals(Verdict.BLOCK, e.inspect("203.0.113.8", "/shop/cart").verdict());
+        assertEquals(Verdict.ALLOW, e.inspect("45.148.10.151", "/shop/cart").verdict()); // old list is gone
+        assertThrows(IllegalArgumentException.class, () -> e.rebuildBlocklist(0, null));
+        assertThrows(IllegalArgumentException.class, () -> e.rebuildBlocklist(0.9, null));
+    }
+
+    @Test
     void trafficWindowCountsAndRejectsBadRanges() {
         ShieldEngine e = new ShieldEngine();
         for (int i = 0; i < 5; i++) e.inspect("10.0.0.2", "/shop/search?q=<script>");
