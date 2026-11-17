@@ -34,3 +34,6 @@ build/
 
 # course brief (not ours to publish)
 *.pdf
+
+# local knowledge-graph output
+graphify-out/
