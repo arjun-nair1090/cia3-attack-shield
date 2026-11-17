@@ -25,6 +25,10 @@ function el(tag, attrs = {}, ...kids) {
   return e;
 }
 
+// Canvas can't read CSS variables, so pull the theme's tokens when painting.
+const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const rgb = hex => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
+
 let toastTimer;
 function toast(msg) {
   const t = $('toast');
@@ -51,7 +55,7 @@ function toast(msg) {
   c.width = c.height = n + quiet * 2;
   const g = c.getContext('2d');
   g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
-  g.fillStyle = '#1E2630';
+  g.fillStyle = '#061426'; // always dark-on-white: phone cameras read that best
   for (let r = 0; r < n; r++) for (let col = 0; col < n; col++) if (q.isDark(r, col)) g.fillRect(col + quiet, r + quiet, 1, 1);
 })();
 
@@ -211,17 +215,8 @@ async function loadBits() {
   bitCount = stats.bloomBits;
   k = stats.bloomHashes;
   side = Math.ceil(Math.sqrt(bitCount));
-  const img = new ImageData(side, side);
-  for (let i = 0; i < side * side; i++) {
-    const o = i * 4;
-    if (i >= bitCount) { img.data[o + 3] = 0; continue; }
-    const v = isSet(i) ? 112 : 255; // set bits as grey grain, empty bits white
-    img.data[o] = img.data[o + 1] = img.data[o + 2] = v;
-    img.data[o + 3] = 255;
-  }
-  fieldImg = await createImageBitmap(img);
   field.width = field.height = side;
-  drawField();
+  await paintBits();
 
   const kb = Math.round(bitCount / 8 / 1024);
   $('fieldNote').replaceChildren(
@@ -231,6 +226,18 @@ async function loadBits() {
   );
 }
 const isSet = i => (bitBytes[i >> 3] >> (i & 7)) & 1;
+
+async function paintBits() {
+  if (!bitBytes) return;
+  const on = rgb(css('--bit-on')), off = rgb(css('--bit-off'));
+  const img = new ImageData(side, side);
+  for (let i = 0; i < bitCount; i++) {
+    const c = isSet(i) ? on : off, o = i * 4;
+    img.data[o] = c[0]; img.data[o + 1] = c[1]; img.data[o + 2] = c[2]; img.data[o + 3] = 255;
+  }
+  fieldImg = await createImageBitmap(img);
+  drawField();
+}
 
 function probe(i) {
   if (!bitBytes || !i.bloomProbes) return;
@@ -245,13 +252,13 @@ function drawField() {
   const g = field.getContext('2d');
   g.imageSmoothingEnabled = false;
   g.drawImage(fieldImg, 0, 0);
-  const now = performance.now(), life = reduced ? 2500 : 1600;
+  const now = performance.now(), life = reduced ? 2500 : 1600, stop = css('--stop'), pass = css('--pass');
   while (markers.length && now - markers[0].t > life) markers.shift();
   for (const m of markers) {
     const age = (now - m.t) / life;
     const r = reduced ? 22 : 14 + age * 34;
     g.globalAlpha = 1 - age;
-    g.strokeStyle = g.fillStyle = m.set ? '#E8650A' : '#2459D6';
+    g.strokeStyle = g.fillStyle = m.set ? stop : pass;
     g.lineWidth = 7;
     g.beginPath(); g.arc(m.x, m.y, r, 0, Math.PI * 2); g.stroke();
     g.fillRect(m.x - 6, m.y - 6, 12, 12);
@@ -290,23 +297,24 @@ function drawPulse(t) {
   c.height = c.clientHeight * dpr;
   const g = c.getContext('2d'), w = c.width, h = c.height, n = t.all.length;
   const top = 22 * dpr, max = Math.max(1, ...t.all), bw = w / n, scale = (h - top) / max;
+  const [rail, pass, stop, muted, text] = ['--rail', '--pass', '--stop', '--muted', '--text'].map(css);
   g.clearRect(0, 0, w, h);
-  g.fillStyle = '#D5DCE3';
+  g.fillStyle = rail;
   g.fillRect(0, h - dpr, w, dpr);
   t.all.forEach((v, i) => {
     const b = t.blocked[i];
-    g.fillStyle = '#2459D6';
+    g.fillStyle = pass;
     g.fillRect(i * bw + dpr, h - (v - b) * scale, bw - 2 * dpr, (v - b) * scale);
-    g.fillStyle = '#E8650A';
+    g.fillStyle = stop;
     g.fillRect(i * bw + dpr, h - v * scale, bw - 2 * dpr, b * scale);
   });
   g.font = `600 ${12 * dpr}px Archivo, sans-serif`;
-  g.fillStyle = '#6B7A89';
+  g.fillStyle = muted;
   g.fillText(`${fmt(max)} per second`, 0, 13 * dpr);
   if (t.peakCount > 0) {
     const x = (n - 1 - t.peakSecondsAgo) * bw + bw / 2;
     const label = `peak ${fmt(t.peakCount)}`;
-    g.fillStyle = '#1E2630';
+    g.fillStyle = text;
     g.textAlign = x > w - 80 * dpr ? 'right' : 'center';
     g.fillText(label, Math.min(Math.max(x, 40 * dpr), w), 13 * dpr);
     g.textAlign = 'left';
@@ -432,4 +440,51 @@ addEventListener('keydown', e => {
   if (key === 'f') { e.preventDefault(); $('floodDlg').showModal(); }
   if (key === 'n') { e.preventDefault(); $('netDlg').showModal(); solveNet(); }
   if (key === 'b') { e.preventDefault(); blockMe(); }
+  if (key === 'd') { e.preventDefault(); toggleTheme(); }
 });
+
+// ---------- daylight mode for bright rooms ----------
+function toggleTheme() {
+  const light = document.documentElement.dataset.theme !== 'light';
+  if (light) document.documentElement.dataset.theme = 'light'; else delete document.documentElement.dataset.theme;
+  try { localStorage.setItem('theme', light ? 'light' : 'dark'); } catch { /* private window: just don't remember */ }
+  syncThemeButton();
+  paintBits();
+  refresh();
+}
+const syncThemeButton = () => $('theme').setAttribute('aria-pressed', document.documentElement.dataset.theme === 'light');
+$('theme').onclick = toggleTheme;
+syncThemeButton();
+
+// ---------- boot sequence: once per browser tab, real numbers from the engine ----------
+(async () => {
+  try { if (reduced || sessionStorage.getItem('booted')) return; sessionStorage.setItem('booted', '1'); } catch { return; }
+  const boot = $('boot'), log = $('bootLog');
+  let s;
+  try { s = await api('stats'); } catch { return; } // server down: skip straight to the dashboard
+  boot.hidden = false;
+  let skip = false;
+  const end = () => { skip = true; boot.classList.add('done'); setTimeout(() => boot.hidden = true, 400); };
+  addEventListener('keydown', end, { once: true });
+  boot.onclick = end;
+  const lines = [
+    `attack-shield: live request inspection`,
+    `loading blocklist ............ ${fmt(s.blocklistSize)} IPs`,
+    `sizing Bloom filter .......... m = ${fmt(s.bloomBits)} bits, k = ${s.bloomHashes}`,
+    `  expected false-alarm rate    ${(s.bloomExpectedFpr * 100).toFixed(2)} %`,
+    `compiling signature trie ..... ${s.signatures} patterns`,
+    `traffic segment tree ......... 600 one-second buckets`,
+    `opening live event stream .... ok`,
+    `armed.`,
+  ];
+  for (const line of lines) {
+    if (skip) return;
+    const row = el('span', {}, '');
+    log.append(row, '\n');
+    for (let c = 1; c <= line.length && !skip; c += 2) { row.textContent = line.slice(0, c); await new Promise(r => setTimeout(r, 9)); }
+    row.textContent = line;
+    if (line.endsWith('ok') || line === 'armed.') row.className = 'ok';
+    await new Promise(r => setTimeout(r, 120));
+  }
+  setTimeout(end, 600);
+})();

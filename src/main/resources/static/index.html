@@ -4,15 +4,21 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Attack Shield</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='3' width='26' height='26' fill='none' stroke='%231E2630' stroke-width='3'/%3E%3Crect x='11' y='11' width='10' height='10' fill='%23E8650A'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23061426'/%3E%3Crect x='5' y='5' width='22' height='22' fill='none' stroke='%2338A6FF' stroke-width='2.5'/%3E%3Crect x='12' y='12' width='8' height='8' fill='%23FF7A1F'/%3E%3C/svg%3E">
   <link rel="preload" href="fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <!-- ?v=2 evicts copies browsers cached before no-store was set; no further bumps needed -->
-  <link rel="stylesheet" href="style.css?v=2">
+  <!-- ?v=3 evicts copies browsers cached before no-store was set; no further bumps needed -->
+  <link rel="stylesheet" href="style.css?v=3">
+  <script>try { if (localStorage.getItem('theme') === 'light') document.documentElement.dataset.theme = 'light'; } catch {}</script>
 </head>
 <body>
 
+<div class="boot" id="boot" hidden aria-hidden="true">
+  <pre id="bootLog"></pre>
+  <p class="boot-skip">Press any key to skip</p>
+</div>
+
 <header class="bar">
-  <h1 class="mark">Attack Shield</h1>
+  <h1 class="mark">Attack Shield<span class="caret" aria-hidden="true">_</span></h1>
   <p class="guard">
     <span class="live" id="live">Connecting</span>
     Guarding <a id="shopUrl" class="wire" href="/shop/index.html" target="_blank" rel="noopener">/shop</a>
@@ -21,6 +27,7 @@
     <button id="openFlood"><kbd>F</kbd> Launch flood</button>
     <button id="openNet"><kbd>N</kbd> Network bottleneck</button>
     <button id="blockMe"><kbd>B</kbd> Block my IP</button>
+    <button id="theme" aria-pressed="false"><kbd>D</kbd> Daylight</button>
   </nav>
   <figure class="qr">
     <canvas id="qr" aria-label="QR code that opens the shop"></canvas>
@@ -28,11 +35,17 @@
   </figure>
 </header>
 
+<ol class="howto" aria-label="How to use">
+  <li><b>1</b> Scan the code, or open the shop link on any device.</li>
+  <li><b>2</b> Type an attack into the shop’s search box, like <code class="wire">' or 1=1--</code></li>
+  <li><b>3</b> Watch it get caught and taken apart here.</li>
+</ol>
+
 <main class="stage">
 
-  <section class="belt" aria-label="Requests moving through the scanner">
+  <section class="belt hud" aria-label="Requests moving through the scanner">
     <div class="gate" style="--x: 22%"><b>Bloom filter</b><span id="gBloom">0 possibly listed</span></div>
-    <div class="gate" style="--x: 44%"><b>Exact check</b><span id="gExact">0 confirmed</span></div>
+    <div class="gate" style="--x: 44%"><b>Exact check</b><span id="gExact">0 false alarms cleared</span></div>
     <div class="gate" style="--x: 66%"><b>Signature trie</b><span id="gTrie">0 matched</span></div>
     <div class="gate verdict" style="--x: 86%"><b>Verdict</b><span id="gVerdict">0 stopped</span></div>
     <div class="rail" aria-hidden="true"></div>
@@ -41,34 +54,33 @@
     <p class="belt-empty" id="beltEmpty">Waiting for traffic. Open the shop or scan the code.</p>
   </section>
 
-  <section class="autopsy" aria-labelledby="autopsyTitle">
-    <h2 id="autopsyTitle" class="quiet">Latest stopped request</h2>
+  <section class="autopsy hud" aria-labelledby="autopsyTitle">
+    <h2 id="autopsyTitle" class="quiet">Latest stopped request <span class="tag-algo">SignatureTrie.scan()  O(n·L)</span></h2>
     <div class="specimen" id="specimen">
-      <p class="sent"><span class="k">Sent</span><code class="wire" id="sent">Nothing stopped yet.</code></p>
+      <p class="sent"><span class="k">Sent</span><code class="wire" id="sent">Nothing stopped yet. Try an attack in the shop.</code></p>
       <p class="read"><span class="k">Read</span><code class="wire" id="read"></code></p>
     </div>
     <ol class="trace" id="trace" aria-live="polite"></ol>
-  </section>
-
-  <section class="field" aria-labelledby="fieldTitle">
-    <h2 id="fieldTitle" class="quiet">Bloom filter memory</h2>
-    <canvas id="bits" aria-describedby="fieldNote"></canvas>
-    <p class="note" id="fieldNote">Loading the filter…</p>
-  </section>
-
-  <section class="pulse" aria-labelledby="pulseTitle">
-    <h2 id="pulseTitle" class="quiet">Requests per second, last 60 s</h2>
-    <canvas id="chart"></canvas>
-    <p class="flood" id="flood" hidden></p>
-    <p class="note">Window totals and the peak come from the segment tree, O(log n) per query.</p>
   </section>
 
   <section class="numbers" aria-label="Totals">
     <p><b id="nTotal">0</b><span>inspected</span></p>
     <p class="stop"><b id="nBlocked">0</b><span>stopped</span></p>
     <p class="flag"><b id="nFlagged">0</b><span>flagged for review</span></p>
-    <p><b id="nFp">0</b><span>Bloom false alarms caught by the exact check</span></p>
+    <p class="clear"><b id="nFp">0</b><span>Bloom false alarms caught by the exact check</span></p>
     <p><b id="nMicros">0</b><span>µs per inspection</span></p>
+  </section>
+
+  <section class="field hud" aria-labelledby="fieldTitle">
+    <h2 id="fieldTitle" class="quiet">Bloom filter memory <span class="tag-algo">BloomFilter  k probes, O(k)</span></h2>
+    <canvas id="bits" aria-describedby="fieldNote"></canvas>
+    <p class="note" id="fieldNote">Loading the filter…</p>
+  </section>
+
+  <section class="pulse" aria-labelledby="pulseTitle">
+    <h2 id="pulseTitle" class="quiet">Requests per second, last 60 s <span class="tag-algo">TrafficSegmentTree  O(log n) per query</span></h2>
+    <canvas id="chart"></canvas>
+    <p class="flood" id="flood" hidden></p>
   </section>
 
 </main>
@@ -99,6 +111,6 @@
 </dialog>
 
 <script src="vendor/qrcode.min.js"></script>
-<script src="app.js?v=2"></script>
+<script src="app.js?v=3"></script>
 </body>
 </html>
