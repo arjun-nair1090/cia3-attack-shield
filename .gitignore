@@ -37,3 +37,5 @@ build/
 
 # local knowledge-graph output
 graphify-out/
+# local browser-test output
+.playwright-mcp/
