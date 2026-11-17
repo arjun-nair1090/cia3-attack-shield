@@ -5,6 +5,7 @@ import edu.atlas.shield.core.ShieldEngine;
 import edu.atlas.shield.core.TrafficSimulator;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -98,7 +99,10 @@ public class ApiController {
             if (id.putIfAbsent(n, id.size()) != null) throw new IllegalArgumentException("duplicate node: " + n);
         }
         MaxFlow g = new MaxFlow(id.size());
-        for (Link l : net.links()) g.addEdge(node(id, l.from()), node(id, l.to()), l.capacity());
+        for (Link l : net.links()) {
+            if (l == null) throw new IllegalArgumentException("links must not contain null");
+            g.addEdge(node(id, l.from()), node(id, l.to()), l.capacity());
+        }
         MaxFlow.Result r = g.solve(node(id, net.source()), node(id, net.sink()));
         List<Link> cut = r.minCut().stream()
                 .map(e -> new Link(net.nodes().get(e.from()), net.nodes().get(e.to()), e.capacity())).toList();
@@ -116,5 +120,11 @@ public class ApiController {
     @ExceptionHandler({IllegalArgumentException.class, IndexOutOfBoundsException.class})
     public ResponseEntity<Map<String, String>> badRequest(RuntimeException e) {
         return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+    }
+
+    /** Missing or malformed JSON body: same {error} shape as every other 400, not Spring's default page. */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, String>> unreadable() {
+        return ResponseEntity.badRequest().body(Map.of("error", "request body is missing or is not valid JSON"));
     }
 }
