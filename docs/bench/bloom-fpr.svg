@@ -1,0 +1,40 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 720 400' width='720' height='400' font-family='Archivo, Segoe UI, Helvetica, Arial, sans-serif' role='img' aria-label='Bloom filter false positives as it fills past its design size'>
+<rect width='720' height='400' fill='#fcfcfb'/>
+<text x='16' y='28' font-size='17' font-weight='700' fill='#0b0b0b'>Bloom filter false positives as it fills past its design size</text>
+<line x1='76' x2='530' y1='344.0' y2='344.0' stroke='#e4e3df' stroke-width='1'/>
+<text x='68' y='348.0' font-size='12' fill='#52514e' text-anchor='end'>0</text>
+<line x1='76' x2='530' y1='272.0' y2='272.0' stroke='#e4e3df' stroke-width='1'/>
+<text x='68' y='276.0' font-size='12' fill='#52514e' text-anchor='end'>5</text>
+<line x1='76' x2='530' y1='200.0' y2='200.0' stroke='#e4e3df' stroke-width='1'/>
+<text x='68' y='204.0' font-size='12' fill='#52514e' text-anchor='end'>10</text>
+<line x1='76' x2='530' y1='128.0' y2='128.0' stroke='#e4e3df' stroke-width='1'/>
+<text x='68' y='132.0' font-size='12' fill='#52514e' text-anchor='end'>15</text>
+<line x1='76' x2='530' y1='56.0' y2='56.0' stroke='#e4e3df' stroke-width='1'/>
+<text x='68' y='60.0' font-size='12' fill='#52514e' text-anchor='end'>20</text>
+<text x='94.2' y='362' font-size='12' fill='#52514e' text-anchor='middle'>10</text>
+<text x='127.1' y='362' font-size='12' fill='#52514e' text-anchor='middle'>25</text>
+<text x='182.1' y='362' font-size='12' fill='#52514e' text-anchor='middle'>50</text>
+<text x='237.1' y='362' font-size='12' fill='#52514e' text-anchor='middle'>75</text>
+<text x='292.0' y='362' font-size='12' fill='#52514e' text-anchor='middle'>100</text>
+<text x='347.0' y='362' font-size='12' fill='#52514e' text-anchor='middle'>125</text>
+<text x='401.9' y='362' font-size='12' fill='#52514e' text-anchor='middle'>150</text>
+<text x='511.8' y='362' font-size='12' fill='#52514e' text-anchor='middle'>200</text>
+<line x1='76' x2='530' y1='344' y2='344' stroke='#52514e'/>
+<text x='303' y='388' font-size='13' fill='#52514e' text-anchor='middle'>% of design capacity filled</text>
+<text x='16' y='46' font-size='13' fill='#52514e'>false-positive rate, %</text>
+<line x1='76' x2='530' y1='329.6' y2='329.6' stroke='#52514e' stroke-width='1.5' stroke-dasharray='6 4'/>
+<text x='540' y='333.6' font-size='12' fill='#52514e'>design target 1 %</text>
+<polyline points='94.2,344.0 127.1,344.0 182.1,343.6 237.1,340.5 292.0,329.6 347.0,304.3 401.9,260.6 511.8,117.2' fill='none' stroke='#eb6834' stroke-width='2' stroke-linejoin='round' stroke-dasharray='7 5'/>
+<circle cx='94.2' cy='344.0' r='5' fill='#2a78d6' stroke='#fcfcfb' stroke-width='2'/>
+<circle cx='127.1' cy='344.0' r='5' fill='#2a78d6' stroke='#fcfcfb' stroke-width='2'/>
+<circle cx='182.1' cy='343.6' r='5' fill='#2a78d6' stroke='#fcfcfb' stroke-width='2'/>
+<circle cx='237.1' cy='340.5' r='5' fill='#2a78d6' stroke='#fcfcfb' stroke-width='2'/>
+<circle cx='292.0' cy='329.9' r='5' fill='#2a78d6' stroke='#fcfcfb' stroke-width='2'/>
+<circle cx='347.0' cy='304.7' r='5' fill='#2a78d6' stroke='#fcfcfb' stroke-width='2'/>
+<circle cx='401.9' cy='260.6' r='5' fill='#2a78d6' stroke='#fcfcfb' stroke-width='2'/>
+<circle cx='511.8' cy='115.9' r='5' fill='#2a78d6' stroke='#fcfcfb' stroke-width='2'/>
+<circle cx='546.0' cy='111.9' r='5' fill='#2a78d6' stroke='#fcfcfb' stroke-width='2'/>
+<text x='556' y='115.9' font-size='12.5' fill='#0b0b0b'>Measured</text>
+<line x1='538' x2='552' y1='127.9' y2='127.9' stroke='#eb6834' stroke-width='2' stroke-dasharray='4 3'/>
+<text x='556' y='131.9' font-size='12.5' fill='#0b0b0b'>Theory (1-e^(-kn/m))^k</text>
+</svg>

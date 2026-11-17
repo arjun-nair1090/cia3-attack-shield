@@ -28,6 +28,9 @@
 	</scm>
 	<properties>
 		<java.version>25</java.version>
+		<!-- Benchmarks are slow and machine-dependent: skipped by default.
+		     Run them with ./mvnw test -Dgroups=bench -DexcludedGroups=none -->
+		<excludedGroups>bench</excludedGroups>
 	</properties>
 	<dependencies>
 		<dependency>

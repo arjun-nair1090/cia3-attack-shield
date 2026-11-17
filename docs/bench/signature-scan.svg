@@ -1,0 +1,38 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 720 400' width='720' height='400' font-family='Archivo, Segoe UI, Helvetica, Arial, sans-serif' role='img' aria-label='Scanning one request for every signature'>
+<rect width='720' height='400' fill='#fcfcfb'/>
+<text x='16' y='28' font-size='17' font-weight='700' fill='#0b0b0b'>Scanning one request for every signature</text>
+<line x1='76' x2='530' y1='344.0' y2='344.0' stroke='#e4e3df' stroke-width='1'/>
+<text x='68' y='348.0' font-size='12' fill='#52514e' text-anchor='end'>0.1</text>
+<line x1='76' x2='530' y1='272.0' y2='272.0' stroke='#e4e3df' stroke-width='1'/>
+<text x='68' y='276.0' font-size='12' fill='#52514e' text-anchor='end'>1</text>
+<line x1='76' x2='530' y1='200.0' y2='200.0' stroke='#e4e3df' stroke-width='1'/>
+<text x='68' y='204.0' font-size='12' fill='#52514e' text-anchor='end'>10</text>
+<line x1='76' x2='530' y1='128.0' y2='128.0' stroke='#e4e3df' stroke-width='1'/>
+<text x='68' y='132.0' font-size='12' fill='#52514e' text-anchor='end'>100</text>
+<line x1='76' x2='530' y1='56.0' y2='56.0' stroke='#e4e3df' stroke-width='1'/>
+<text x='68' y='60.0' font-size='12' fill='#52514e' text-anchor='end'>1,000</text>
+<text x='94.2' y='362' font-size='12' fill='#52514e' text-anchor='middle'>49</text>
+<text x='303.9' y='362' font-size='12' fill='#52514e' text-anchor='middle'>500</text>
+<text x='511.8' y='362' font-size='12' fill='#52514e' text-anchor='middle'>5,000</text>
+<line x1='76' x2='530' y1='344' y2='344' stroke='#52514e'/>
+<text x='303' y='388' font-size='13' fill='#52514e' text-anchor='middle'>signatures loaded (log scale)</text>
+<text x='16' y='46' font-size='13' fill='#52514e'>microseconds per request (median) (log scale)</text>
+<polyline points='94.2,293.2 303.9,285.5 511.8,291.6' fill='none' stroke='#2a78d6' stroke-width='2' stroke-linejoin='round'/>
+<circle cx='94.2' cy='293.2' r='5' fill='#2a78d6' stroke='#fcfcfb' stroke-width='2'/>
+<circle cx='303.9' cy='285.5' r='5' fill='#2a78d6' stroke='#fcfcfb' stroke-width='2'/>
+<circle cx='511.8' cy='291.6' r='5' fill='#2a78d6' stroke='#fcfcfb' stroke-width='2'/>
+<polyline points='94.2,209.5 303.9,137.7 511.8,68.3' fill='none' stroke='#eb6834' stroke-width='2' stroke-linejoin='round'/>
+<rect x='89.2' y='204.5' width='10' height='10' rx='1.5' fill='#eb6834' stroke='#fcfcfb' stroke-width='2'/>
+<rect x='298.9' y='132.7' width='10' height='10' rx='1.5' fill='#eb6834' stroke='#fcfcfb' stroke-width='2'/>
+<rect x='506.8' y='63.3' width='10' height='10' rx='1.5' fill='#eb6834' stroke='#fcfcfb' stroke-width='2'/>
+<polyline points='94.2,271.5 303.9,217.6 511.8,137.4' fill='none' stroke='#1baf7a' stroke-width='2' stroke-linejoin='round'/>
+<path d='M94.2 265.5 l6 6 l-6 6 l-6 -6 z' fill='#1baf7a' stroke='#fcfcfb' stroke-width='2'/>
+<path d='M303.9 211.6 l6 6 l-6 6 l-6 -6 z' fill='#1baf7a' stroke='#fcfcfb' stroke-width='2'/>
+<path d='M511.8 131.4 l6 6 l-6 6 l-6 -6 z' fill='#1baf7a' stroke='#fcfcfb' stroke-width='2'/>
+<rect x='541.0' y='59.3' width='10' height='10' rx='1.5' fill='#eb6834' stroke='#fcfcfb' stroke-width='2'/>
+<text x='556' y='68.3' font-size='12.5' fill='#0b0b0b'>KMP per signature</text>
+<path d='M546.0 127.4 l6 6 l-6 6 l-6 -6 z' fill='#1baf7a' stroke='#fcfcfb' stroke-width='2'/>
+<text x='556' y='137.4' font-size='12.5' fill='#0b0b0b'>indexOf per signature</text>
+<circle cx='546.0' cy='287.6' r='5' fill='#2a78d6' stroke='#fcfcfb' stroke-width='2'/>
+<text x='556' y='291.6' font-size='12.5' fill='#0b0b0b'>Trie, one pass</text>
+</svg>
