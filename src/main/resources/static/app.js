@@ -152,7 +152,8 @@ function autopsy(i) {
   renderAutopsy(i);
 }
 
-function renderAutopsy(i) {
+function renderAutopsy(i, heading = 'Latest stopped request') {
+  $('autopsyTitle').firstChild.nodeValue = heading + ' ';
   const text = i.normalized;
   const ranges = i.matches
     .map(m => ({ from: m.position, to: m.position + m.signature.length, label: LABEL[m.category] ?? m.category }))
@@ -351,6 +352,29 @@ function showSim(r) {
     el('dt', {}, 'Note'), el('dd', { class: 'note' }, 'These attacks are built from the shield’s own signature list, so a catch rate near 100 % is expected. Real-traffic results belong in the report.'));
 }
 
+// ---------- inspect any text (the examiner's own input) ----------
+function openInspect() {
+  $('inspMsg').textContent = '';
+  $('inspectDlg').showModal();
+  $('inspText').focus();
+}
+$('openInspect').onclick = openInspect;
+$('inspGo').onclick = async () => {
+  const btn = $('inspGo');
+  btn.disabled = true;
+  try {
+    const i = await api('inspect', { text: $('inspText').value, ip: $('inspIp').value });
+    $('inspectDlg').close();
+    lastAutopsy = performance.now() + 6000; // hold the answer on screen ~8 s before live traffic replaces it
+    renderAutopsy(i, 'Your text, inspected');
+    toast(`${VERDICT[i.verdict]}. ${i.reasons.length ? i.reasons.join('; ') : 'No attack pattern; IP not listed'}.`);
+  } catch (e) {
+    $('inspMsg').textContent = 'Could not inspect: ' + e.message;
+  } finally {
+    btn.disabled = false;
+  }
+};
+
 // ---------- block my IP ----------
 async function blockMe() {
   try {
@@ -437,6 +461,7 @@ addEventListener('keydown', e => {
   if (e.ctrlKey || e.metaKey || e.altKey || document.querySelector('dialog[open]')) return;
   if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
   const key = e.key.toLowerCase();
+  if (key === 'i') { e.preventDefault(); openInspect(); }
   if (key === 'f') { e.preventDefault(); $('floodDlg').showModal(); }
   if (key === 'n') { e.preventDefault(); $('netDlg').showModal(); solveNet(); }
   if (key === 'b') { e.preventDefault(); blockMe(); }

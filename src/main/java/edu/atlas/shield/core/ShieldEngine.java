@@ -61,7 +61,25 @@ public class ShieldEngine {
     }
 
     // ponytail: one global lock around the pipeline; per-bucket atomics if throughput ever matters more than clarity.
+    /** Screen a live request: run the pipeline, then count it into the stats and the traffic window. */
     public synchronized Inspection inspect(String ip, String rawRequest) {
+        Inspection in = analyze(ip, rawRequest);
+        record(in.timeMillis() / 1000, in.verdict());
+        total++;
+        totalNanos += in.nanos();
+        if (in.bloomHit()) bloomHits++;
+        if (in.bloomHit() && !in.confirmedBadIp()) bloomFalsePositives++;
+        if (!in.matches().isEmpty()) signatureHits++;
+        switch (in.verdict()) {
+            case ALLOW -> allowed++;
+            case FLAG -> flagged++;
+            case BLOCK -> blocked++;
+        }
+        return in;
+    }
+
+    /** Run the pipeline without counting anything: for "what would the shield do with this text?" */
+    public synchronized Inspection analyze(String ip, String rawRequest) {
         long start = System.nanoTime();
         String text = normalize(rawRequest == null ? "" : rawRequest);
 
@@ -77,17 +95,6 @@ public class ShieldEngine {
 
         long nanos = System.nanoTime() - start;
         long now = System.currentTimeMillis();
-        record(now / 1000, verdict);
-        total++;
-        totalNanos += nanos;
-        if (bloomHit) bloomHits++;
-        if (bloomHit && !confirmed) bloomFalsePositives++;
-        if (!matches.isEmpty()) signatureHits++;
-        switch (verdict) {
-            case ALLOW -> allowed++;
-            case FLAG -> flagged++;
-            case BLOCK -> blocked++;
-        }
         int[] probes = ip == null ? new int[0] : bloom.probes(ip); // for the dashboard; outside the timed section
         return new Inspection(now, ip, rawRequest, text, verdict, bloomHit, confirmed, probes, matches, reasons, nanos);
     }
@@ -125,9 +132,12 @@ public class ShieldEngine {
         return s.toLowerCase(Locale.ROOT);
     }
 
+    public static boolean isIp(String ip) {
+        return ip != null && (IPV4.matcher(ip).matches() || (ip.contains(":") && IPV6.matcher(ip).matches()));
+    }
+
     public synchronized boolean addBadIp(String ip) {
-        if (ip == null || !(IPV4.matcher(ip).matches() || (ip.contains(":") && IPV6.matcher(ip).matches())))
-            throw new IllegalArgumentException("not an IP address: " + ip);
+        if (!isIp(ip)) throw new IllegalArgumentException("not an IP address: " + ip);
         if (!exactBadIps.add(ip)) return false;
         bloom.add(ip);
         badIpList.add(ip);
