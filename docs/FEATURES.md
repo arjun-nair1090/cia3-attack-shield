@@ -15,7 +15,7 @@ Nothing below is speculative padding: every feature names the rubric line it ser
 | Bloom filter, signature trie + KMP, traffic segment tree, Edmonds–Karp min-cut | merged (#1–#4), 26 unit tests green |
 | Pipeline, live dashboard (SSE), demo shop, flood simulator with ground-truth labels | draft PR #5 |
 | Security: encoded-path bypass closed, dashboard API local-only, self-only blocklist | in #5 |
-| Verdict policy `ShieldEngine.decide()` | **not written: the app returns 500 until it is** |
+| Verdict policy `ShieldEngine.decide()` + 5 engine tests | in #5. 100k synthetic flood: 100 % detection, 0 % false alarms, 340k req/s (circular: attacks come from our own signature list, see M8) |
 
 **What the code graph says** (graphify, 221 nodes, 11 clusters): `ShieldEngine` is the god node: 28 edges, bridging 7 of 11 clusters (betweenness 0.23). It loads data, runs the pipeline, owns the traffic ring buffer, and keeps stats. That is the first thing a "separation of concerns" examiner will poke (Java backend quality, 10 marks). See B1.
 
@@ -25,7 +25,7 @@ Nothing below is speculative padding: every feature names the rubric line it ser
 
 | # | Feature | Rubric line it fixes | Effort |
 |---|---|---|---|
-| M1 | **Write `decide()`**: exploit match → BLOCK, scanner-only → FLAG, blocklisted IP with clean URL → FLAG (shared carrier IPs). Document the trade-off in the report. | Correctness 20, viva 15 | S |
+| M1 | **`decide()` policy (done)**: exploit match or listed IP → BLOCK, scanner-only → FLAG. The report must discuss the cost: a listed IP may be a shared carrier IP, so innocent users behind it are blocked too. | Correctness 20, viva 15 | done |
 | M2 | **Benchmark suite** at 3 sizes per algorithm vs a baseline, exported as CSV for the report (table in §5). Runnable as `./mvnw test -Dgroups=bench` and from the dashboard. | Complexity & performance 15 | M |
 | M3 | **Bloom filter: theory vs measurement chart.** Fill the filter from 10 % to 150 % of its design capacity; plot measured FPR against (1 − e^(−kn/m))^k. Shows exactly when a Bloom filter stops helping. | "Sound probabilistic behaviour" (Correctness 20), CO5 | S |
 | M4 | **"Inspect any text" box.** Paste a URL, header or payload, get the verdict, matched offsets and timings. No HTTP round-trip, so the examiner can change the sample input mid-viva (§10 of the brief says they will). `POST /api/inspect`. | Demo & viva 15 | S |
