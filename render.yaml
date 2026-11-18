@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: attack-shield
+    runtime: docker
+    plan: free
+    region: singapore
+    healthCheckPath: /
+    envVars:
+      # Let visitors from other machines open the dashboard.
+      - key: SHIELD_DASHBOARD_LOCALONLY
+        value: "false"
+      # Behind Render's proxy, read the visitor's real IP from X-Forwarded-For.
+      - key: SERVER_FORWARD_HEADERS_STRATEGY
+        value: native
