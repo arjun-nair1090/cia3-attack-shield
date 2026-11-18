@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: attack-shield
+    runtime: docker
+    plan: free
+    region: singapore
+    healthCheckPath: /
+    envVars:
+      # Let visitors from other machines open the dashboard.
+      - key: SHIELD_DASHBOARD_LOCALONLY
+        value: "false"
+      # Render sits behind Cloudflare. Take the visitor's IP from CF-Connecting-IP
+      # (set by Cloudflare, which overwrites any client-sent value), trusted only when
+      # the request arrives from Render's internal proxy.
+      - key: SERVER_FORWARD_HEADERS_STRATEGY
+        value: native
+      - key: SERVER_TOMCAT_REMOTEIP_REMOTE_IP_HEADER
+        value: CF-Connecting-IP
