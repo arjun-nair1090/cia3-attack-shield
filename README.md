@@ -1,8 +1,25 @@
-# Attack Shield
+<div align="center">
+
+<a href="https://attack-shield.onrender.com"><img src="docs/readme/hero.svg" width="100%" alt="Attack Shield: a SQL injection is read, scanned by the signature trie and stopped"></a>
+
+<a href="https://attack-shield.onrender.com"><img alt="Live demo" src="https://img.shields.io/badge/live_demo-attack--shield.onrender.com-37F2A8?labelColor=061426&style=for-the-badge"></a>
+<img alt="Java 25" src="https://img.shields.io/badge/Java-25-FF7A1F?logo=openjdk&logoColor=white&labelColor=061426&style=for-the-badge">
+<img alt="Spring Boot 4" src="https://img.shields.io/badge/Spring_Boot-4-38A6FF?logo=springboot&logoColor=white&labelColor=061426&style=for-the-badge">
+<img alt="50 tests passing" src="https://img.shields.io/badge/tests-50_passing-37F2A8?labelColor=061426&style=for-the-badge">
+<img alt="3.1 microseconds per request" src="https://img.shields.io/badge/latency-3.1_%C2%B5s%2Frequest-FFE45C?labelColor=061426&style=for-the-badge">
+<img alt="No algorithm libraries" src="https://img.shields.io/badge/algorithms-hand--written-FF7A1F?labelColor=061426&style=for-the-badge">
+
+**[Try to hack the live demo](https://attack-shield.onrender.com)** · **[Watch the 70-second explainer](docs/media/attack-shield-explainer.mp4)**
+
+</div>
+
+<br>
 
 A web application firewall you can watch working. Every HTTP request to a small demo shop passes through a
 screening pipeline built from algorithms implemented by hand in Java, and a live dashboard takes each stopped
 request apart on screen.
+
+<img src="docs/readme/pipeline.svg" width="100%" alt="Requests flowing through the Bloom filter, exact check, signature trie and verdict; attacks drop into the 403 bin">
 
 | Stage | Algorithm (syllabus unit) | What it decides |
 |---|---|---|
@@ -14,7 +31,35 @@ request apart on screen.
 | Separate tool | **Edmonds–Karp max-flow / min-cut** (Unit 5) | Where does a server network choke? The min cut is the set of links a flood saturates first. |
 
 Course: Advanced Algorithms, CIA 3 (B.Tech CS AI & ML, Semester V, 2026–27).
-Technical report: [`docs/REPORT.md`](docs/REPORT.md). Proposal: [`docs/PROPOSAL.md`](docs/PROPOSAL.md).
+
+## Watch it work
+
+<a href="docs/media/attack-shield-explainer.mp4"><img src="docs/media/trailer.gif" width="100%" alt="Trailer: the attack is stopped, the dashboard takes it apart, then each algorithm in action"></a>
+
+<p align="center"><sub>17-second cut. Click it for the full 70-second explainer with voiceover (<a href="docs/media/attack-shield-explainer.mp4">MP4</a>).</sub></p>
+
+## The four algorithms, live
+
+<table>
+<tr>
+<td width="50%"><img src="docs/readme/bloom.svg" width="100%" alt="Bloom filter: seven probes, a possible hit, cleared by the exact check"></td>
+<td width="50%"><img src="docs/readme/trie.svg" width="100%" alt="Signature trie: one scan finds union select"></td>
+</tr>
+<tr>
+<td><b>Bloom filter</b> answers “definitely not listed” for almost every visitor from a structure far smaller than a hash set. A “possibly” goes to the exact check.</td>
+<td><b>Signature trie</b> finds every attack pattern in one pass, and barely slows down as signatures grow. KMP is the baseline it is measured against.</td>
+</tr>
+<tr>
+<td><img src="docs/readme/segtree.svg" width="100%" alt="Segment tree answering range queries"></td>
+<td><img src="docs/readme/maxflow.svg" width="100%" alt="Edmonds-Karp max flow with the minimum cut highlighted"></td>
+</tr>
+<tr>
+<td><b>Segment tree</b> counts requests per second for the last 10 minutes and answers range sums and the peak in O(log n).</td>
+<td><b>Edmonds–Karp</b> finds a server network's maximum throughput; the minimum cut is the links a flood saturates first.</td>
+</tr>
+</table>
+
+## The dashboard
 
 ![Dashboard with a stopped SQL injection taken apart](docs/screenshots/dashboard.png)
 
@@ -33,6 +78,14 @@ Open <http://localhost:8080> for the dashboard. The demo shop is at <http://loca
 To attack from a phone, put it on the same Wi-Fi and scan the QR code on the dashboard. On Windows, allow
 Java through the firewall when asked (or for port 8080 on private networks). The first start takes about a
 second while the 135k-address blocklist loads.
+
+### Live demo
+
+A public copy runs at **<https://attack-shield.onrender.com>** (dashboard at `/`, shop at `/shop/index.html`), with the
+dashboard opened to everyone. It is a free instance: after 15 idle minutes the first visit takes up to a minute to
+wake. Render's edge blocks `' or 1=1--` before it reaches the app, so on the live site try
+`union select password`, `<script>alert(1)</script>` or `../../etc/passwd` instead; locally every payload reaches
+the shield.
 
 ### Configuration
 
@@ -78,7 +131,7 @@ Keys: **I** inspect, **F** flood, **N** network, **T** tune Bloom filter, **B** 
   and a regression test for an encoded-path bypass (`/%73hop`).
 - **Benchmarks** (`bench/BenchmarkTest`): three or more input sizes per algorithm against a baseline, 3 warm-up
   + 7 timed runs, median reported. Each experiment first checks that the algorithm and its baseline give the
-  same answer. Results go to [`docs/bench/`](docs/bench) as CSV and SVG charts.
+  same answer. Running them writes CSV results and SVG charts to `docs/bench/`.
 - **Held-out evaluation** (`bench/HeldOutEvaluationTest`): detection on public attack payloads and false alarms
   on real text, neither of which the signatures were written from.
 
@@ -118,7 +171,7 @@ curl -s 'localhost:8080/api/traffic?seconds=60'
 |---|---|---|
 | Blocklist, 135,530 IPs | `src/main/resources/data/bad-ips.txt` | Snapshot of the [ipsum](https://github.com/stamparm/ipsum) daily feed of malicious IPs, Unlicense (public domain) |
 | Attack signatures | `src/main/resources/data/signatures.txt` | Written for this project from the OWASP attack families; format `CATEGORY\|pattern` |
-| Held-out attacks | `src/test/resources/eval/attacks/` | [PayloadsAllTheThings](https://github.com/swisskyrepo/PayloadsAllTheThings), MIT, pinned commit; see [`SOURCES.md`](src/test/resources/eval/SOURCES.md) |
+| Held-out attacks | `src/test/resources/eval/attacks/` | [PayloadsAllTheThings](https://github.com/swisskyrepo/PayloadsAllTheThings), MIT (licence in `LICENSE-PayloadsAllTheThings.txt`), pinned to commit `08ea40e`, files copied unchanged and renamed `<CATEGORY>-<name>` |
 | Benign text | `src/test/resources/eval/benign/` | 10,000 random English Wikipedia titles, CC BY-SA 4.0 |
 | Flood traffic | generated | `TrafficSimulator`, labelled, seeded |
 
@@ -134,7 +187,7 @@ src/main/java/edu/atlas/shield/
   web/    ApiController, ShieldFilter, LocalOnlyFilter, EventHub, ShopController   HTTP layer
 src/main/resources/static/                                                dashboard (plain JS) and shop
 src/test/java/edu/atlas/shield/                                           unit, API, benchmark and evaluation tests
-docs/   REPORT.md, PROPOSAL.md, bench/ (CSV + SVG results), screenshots/
+docs/   screenshots/, readme/ (the animated SVGs on this page), media/ (explainer video and trailer)
 ```
 
 ## Screenshots
