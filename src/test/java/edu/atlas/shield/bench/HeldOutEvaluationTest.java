@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Detection measured on data the signatures were NOT written from (the built-in flood is circular: its attacks
  * come from the signature list itself, so it always scores ~100 %).
  * <ul>
- *   <li>Attacks: public payload lists from PayloadsAllTheThings (MIT), pinned to one commit; see eval/SOURCES.md.</li>
+ *   <li>Attacks: public payload lists from PayloadsAllTheThings (MIT), pinned to one commit; see the Data section of README.md.</li>
  *   <li>Benign: 10,000 random English Wikipedia article titles (CC BY-SA 4.0) typed into the shop search box.</li>
  * </ul>
  * Every input is sent the way a browser sends a search: /shop/search?q=URL-encoded text, from a clean IP, so only
@@ -95,6 +95,6 @@ class HeldOutEvaluationTest {
         BenchmarkTest.write("held-out-missed.csv", "category,source_file,payload", missed);
         BenchmarkTest.write("held-out-false-alarms.csv", "verdict,title,reasons", falseAlarms);
 
-        assertTrue(attacks > 1_000 && benign.size() >= 5_000, "evaluation data is missing; see " + EVAL.resolve("SOURCES.md"));
+        assertTrue(attacks > 1_000 && benign.size() >= 5_000, "evaluation data is missing from " + EVAL);
     }
 }

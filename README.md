@@ -9,7 +9,7 @@
 <img alt="3.1 microseconds per request" src="https://img.shields.io/badge/latency-3.1_%C2%B5s%2Frequest-FFE45C?labelColor=061426&style=for-the-badge">
 <img alt="No algorithm libraries" src="https://img.shields.io/badge/algorithms-hand--written-FF7A1F?labelColor=061426&style=for-the-badge">
 
-**[Try to hack the live demo](https://attack-shield.onrender.com)** · **[Watch the 70-second explainer](docs/media/attack-shield-explainer.mp4)** · **[Read the technical report](docs/REPORT.md)**
+**[Try to hack the live demo](https://attack-shield.onrender.com)** · **[Watch the 70-second explainer](docs/media/attack-shield-explainer.mp4)**
 
 </div>
 
@@ -31,7 +31,6 @@ request apart on screen.
 | Separate tool | **Edmonds–Karp max-flow / min-cut** (Unit 5) | Where does a server network choke? The min cut is the set of links a flood saturates first. |
 
 Course: Advanced Algorithms, CIA 3 (B.Tech CS AI & ML, Semester V, 2026–27).
-Technical report: [`docs/REPORT.md`](docs/REPORT.md). Proposal: [`docs/PROPOSAL.md`](docs/PROPOSAL.md).
 
 ## Watch it work
 
@@ -132,7 +131,7 @@ Keys: **I** inspect, **F** flood, **N** network, **T** tune Bloom filter, **B** 
   and a regression test for an encoded-path bypass (`/%73hop`).
 - **Benchmarks** (`bench/BenchmarkTest`): three or more input sizes per algorithm against a baseline, 3 warm-up
   + 7 timed runs, median reported. Each experiment first checks that the algorithm and its baseline give the
-  same answer. Results go to [`docs/bench/`](docs/bench) as CSV and SVG charts.
+  same answer. Running them writes CSV results and SVG charts to `docs/bench/`.
 - **Held-out evaluation** (`bench/HeldOutEvaluationTest`): detection on public attack payloads and false alarms
   on real text, neither of which the signatures were written from.
 
@@ -172,7 +171,7 @@ curl -s 'localhost:8080/api/traffic?seconds=60'
 |---|---|---|
 | Blocklist, 135,530 IPs | `src/main/resources/data/bad-ips.txt` | Snapshot of the [ipsum](https://github.com/stamparm/ipsum) daily feed of malicious IPs, Unlicense (public domain) |
 | Attack signatures | `src/main/resources/data/signatures.txt` | Written for this project from the OWASP attack families; format `CATEGORY\|pattern` |
-| Held-out attacks | `src/test/resources/eval/attacks/` | [PayloadsAllTheThings](https://github.com/swisskyrepo/PayloadsAllTheThings), MIT, pinned commit; see [`SOURCES.md`](src/test/resources/eval/SOURCES.md) |
+| Held-out attacks | `src/test/resources/eval/attacks/` | [PayloadsAllTheThings](https://github.com/swisskyrepo/PayloadsAllTheThings), MIT (licence in `LICENSE-PayloadsAllTheThings.txt`), pinned to commit `08ea40e`, files copied unchanged and renamed `<CATEGORY>-<name>` |
 | Benign text | `src/test/resources/eval/benign/` | 10,000 random English Wikipedia titles, CC BY-SA 4.0 |
 | Flood traffic | generated | `TrafficSimulator`, labelled, seeded |
 
@@ -188,8 +187,7 @@ src/main/java/edu/atlas/shield/
   web/    ApiController, ShieldFilter, LocalOnlyFilter, EventHub, ShopController   HTTP layer
 src/main/resources/static/                                                dashboard (plain JS) and shop
 src/test/java/edu/atlas/shield/                                           unit, API, benchmark and evaluation tests
-docs/   REPORT.md, PROPOSAL.md, bench/ (CSV + SVG results), screenshots/,
-        readme/ (the animated SVGs on this page), media/ (explainer video and trailer)
+docs/   screenshots/, readme/ (the animated SVGs on this page), media/ (explainer video and trailer)
 ```
 
 ## Screenshots
